@@ -27,14 +27,17 @@ class ErrorModal {
             ),
           ),
           actions: [
-            DefaultButton(
-              label: "Coba Lagi", 
-              onPressed: () {
-                Navigator.of(context).pop();
-                onRetry();
-              }, 
-              bgColor: Color(0xFF10A9A4),
-              fgColor: Colors.white,
+            SizedBox(
+              width: double.infinity,
+              child: DefaultButton(
+                label: "Coba Lagi", 
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  onRetry();
+                }, 
+                bgColor: Color(0xFF10A9A4),
+                fgColor: Colors.white,
+              ),
             )
           ],
         );

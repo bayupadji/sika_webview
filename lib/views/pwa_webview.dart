@@ -1,8 +1,10 @@
-// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import 'package:sika/constants/modal/error_modals.dart';
+import 'package:location/location.dart' as loc;
+import 'package:sika/providers/permission_provider.dart';
 
 class PwaWebView extends StatefulWidget {
   const PwaWebView({super.key});
@@ -36,6 +38,48 @@ class _PwaWebViewState extends State<PwaWebView> {
         debugPrint("Izin $permission diberikan.");
       }
     });
+
+    // Memastikan lokasi yang diterima bukan lokasi palsu
+    await _checkMockLocationAndSend();
+  }
+
+  Future<void> _checkMockLocationAndSend() async {
+    // Mengambil akses ke PermissionProvider dari Provider
+    final permissionProvider =
+        Provider.of<PermissionProvider>(context, listen: false);
+
+    // Mengecek apakah lokasi palsu terdeteksi
+    if (permissionProvider.isMockLocationDetected) {
+      debugPrint('Fake GPS detected. Location will not be sent to WebView.');
+      // Menampilkan pesan kesalahan atau notifikasi di WebView jika perlu
+      await webViewController.evaluateJavascript(
+        source: """alert('Fake GPS detected. Please disable mock location.');""",
+      );
+      return; // Tidak melanjutkan pengambilan lokasi
+    }
+
+    // Jika lokasi bukan fake, kirim data lokasi ke WebView
+    await sendLocationToWebView();
+  }
+
+  Future<void> sendLocationToWebView() async {
+    loc.Location location = loc.Location();
+
+    try {
+      loc.LocationData locationData = await location.getLocation();
+
+      final latitude = locationData.latitude ?? 0.0;
+      final longitude = locationData.longitude ?? 0.0;
+
+      debugPrint('Location: $latitude, $longitude');
+
+      // Kirim lokasi ke WebView menggunakan JavaScript
+      await webViewController.evaluateJavascript(
+        source: """window.updateLocation($latitude, $longitude);""",
+      );
+    } catch (e) {
+      debugPrint('Error fetching location: $e');
+    }
   }
 
   Future<bool> _handleBackPress() async {

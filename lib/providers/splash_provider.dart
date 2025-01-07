@@ -25,7 +25,7 @@ class SplashProvider with ChangeNotifier {
     try {
       // Simulasi proses loading
       setLoading(true);
-      await Future.delayed(const Duration(seconds: 3));
+      await Future.delayed(const Duration(seconds: 5));
 
       // Periksa konektivitas
       final connectivityResult = await Connectivity().checkConnectivity();
@@ -49,7 +49,7 @@ class SplashProvider with ChangeNotifier {
         SnackBar(
           content: Text(
             e.toString(),
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.white),
           ),
           backgroundColor: Colors.red,
         ),

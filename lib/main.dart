@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:sika/providers/permission_provider.dart';
 import 'package:sika/providers/splash_provider.dart';
 import 'package:sika/views/splashscreen.dart';
 
@@ -24,6 +25,7 @@ class MainApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SplashProvider()),
+        ChangeNotifierProvider(create: (_) => PermissionProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
