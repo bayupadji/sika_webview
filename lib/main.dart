@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:sika/providers/splash_provider.dart';
-import 'package:sika/views/pwa_webview.dart';
+import 'package:sika/views/splashscreen.dart';
 
 void main() {
   runApp(const MainApp());
@@ -30,7 +30,7 @@ class MainApp extends StatelessWidget {
         theme: ThemeData(
           scaffoldBackgroundColor: Colors.white
         ),
-        home: PwaWebView(),
+        home: SplashScreen(),
       ),
     );
   }

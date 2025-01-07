@@ -8,6 +8,7 @@ environment:
 
 dependencies:
   camera: ^0.11.0+2
+  connectivity_plus: ^6.1.1
   flutter:
     sdk: flutter
   flutter_inappwebview: ^6.1.5
@@ -33,6 +34,5 @@ flutter_launcher_icons:
   ios: true
   remove_alpha_ios: true
   background_color: "#ffffff"
-  # android_low_res_icon: "assets/app_icon.png"
   adaptive_icon_background: "#ffffff"
   adaptive_icon_foreground: "assets/app_icon.png"
