@@ -1,0 +1,19 @@
+# This is a generated file; do not edit or check into version control.
+camera=/Users/mkpmobile/.pub-cache/hosted/pub.dev/camera-0.11.0+2/
+camera_android_camerax=/Users/mkpmobile/.pub-cache/hosted/pub.dev/camera_android_camerax-0.6.10+3/
+camera_avfoundation=/Users/mkpmobile/.pub-cache/hosted/pub.dev/camera_avfoundation-0.9.17+6/
+camera_web=/Users/mkpmobile/.pub-cache/hosted/pub.dev/camera_web-0.3.5/
+flutter_inappwebview=/Users/mkpmobile/.pub-cache/hosted/pub.dev/flutter_inappwebview-6.1.5/
+flutter_inappwebview_android=/Users/mkpmobile/.pub-cache/hosted/pub.dev/flutter_inappwebview_android-1.1.3/
+flutter_inappwebview_ios=/Users/mkpmobile/.pub-cache/hosted/pub.dev/flutter_inappwebview_ios-1.1.2/
+flutter_inappwebview_macos=/Users/mkpmobile/.pub-cache/hosted/pub.dev/flutter_inappwebview_macos-1.1.2/
+flutter_inappwebview_web=/Users/mkpmobile/.pub-cache/hosted/pub.dev/flutter_inappwebview_web-1.1.2/
+flutter_inappwebview_windows=/Users/mkpmobile/.pub-cache/hosted/pub.dev/flutter_inappwebview_windows-0.6.0/
+flutter_plugin_android_lifecycle=/Users/mkpmobile/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.24/
+location=/Users/mkpmobile/.pub-cache/hosted/pub.dev/location-7.0.1/
+location_web=/Users/mkpmobile/.pub-cache/hosted/pub.dev/location_web-5.0.4/
+permission_handler=/Users/mkpmobile/.pub-cache/hosted/pub.dev/permission_handler-11.3.1/
+permission_handler_android=/Users/mkpmobile/.pub-cache/hosted/pub.dev/permission_handler_android-12.0.13/
+permission_handler_apple=/Users/mkpmobile/.pub-cache/hosted/pub.dev/permission_handler_apple-9.4.5/
+permission_handler_html=/Users/mkpmobile/.pub-cache/hosted/pub.dev/permission_handler_html-0.1.3+5/
+permission_handler_windows=/Users/mkpmobile/.pub-cache/hosted/pub.dev/permission_handler_windows-0.2.1/
