@@ -1,9 +1,8 @@
 // ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:sika/constants/error_modals.dart';
+import 'package:sika/constants/modal/error_modals.dart';
 
 class PwaWebView extends StatefulWidget {
   const PwaWebView({super.key});
@@ -15,7 +14,7 @@ class PwaWebView extends StatefulWidget {
 class _PwaWebViewState extends State<PwaWebView> {
   final GlobalKey webViewKey = GlobalKey();
   late InAppWebViewController webViewController;
-  String currentUrl = 'https://192.168.0.20:4443';
+  String currentUrl = 'https://rski-karyawan.netlify.app/';
 
   @override
   void initState() {
