@@ -113,7 +113,9 @@ class _PwaWebViewState extends State<PwaWebView> {
               allowFileAccessFromFileURLs: true,
               allowUniversalAccessFromFileURLs: true,
               allowFileAccess: true,
+              allowsBackForwardNavigationGestures: true,
               geolocationEnabled: true,
+              disableDefaultErrorPage: true,
               isInspectable: false,
             ),
             onWebViewCreated: (controller) {
@@ -134,6 +136,11 @@ class _PwaWebViewState extends State<PwaWebView> {
             },
             onConsoleMessage: (controller, consoleMessage) {
               debugPrint(consoleMessage.message);
+            },
+            onReceivedServerTrustAuthRequest: (controller, challenge) async {
+              return ServerTrustAuthResponse(
+                action: ServerTrustAuthResponseAction.PROCEED
+              );
             },
             onLoadError: (controller, url, code, message) {
               debugPrint('Error: $message');
