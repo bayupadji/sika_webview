@@ -143,13 +143,13 @@ class _PwaWebViewState extends State<PwaWebView> {
               );
             },
             onLoadError: (controller, url, code, message) {
-              debugPrint('Error: $message');
+              debugPrint('Error $code: $message');
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => ErrorPage(
-                    title: "$code: Oops, terjadi kesalahan!",
-                    descriptions: message,
+                    title: "Error $code",
+                    descriptions: "Failed to Load $url: $message",
                     image: "assets/warning.png",
                     onPressed: () {
                       Navigator.pop(context);
@@ -172,7 +172,7 @@ class _PwaWebViewState extends State<PwaWebView> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => ErrorPage(
-                    title: "$statusCode: Oops, terjadi kesalahan!",
+                    title: "HTTP Error $statusCode",
                     descriptions: description,
                     image: "assets/warning.png",
                     onPressed: () {
