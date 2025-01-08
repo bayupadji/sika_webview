@@ -18,7 +18,8 @@ class PwaWebView extends StatefulWidget {
 class _PwaWebViewState extends State<PwaWebView> {
   final GlobalKey webViewKey = GlobalKey();
   late InAppWebViewController webViewController;
-  String currentUrl = 'https://rski-karyawan.netlify.app/';
+  // String currentUrl = 'https://rski-karyawan.netlify.app';
+  String currentUrl = 'https://192.168.0.20:4443';
 
   @override
   void initState() {

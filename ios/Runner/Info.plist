@@ -47,9 +47,11 @@
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>App membutuhkan akses ke lokasi Anda untuk menyediakan layanan berbasis lokasi.</string>
+	<string>Kami memerlukan lokasi Anda untuk memberikan layanan yang lebih baik.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>App membutuhkan akses lokasi untuk digunakan di latar belakang.</string>
+	<string>Lokasi Anda akan digunakan untuk pembaruan lokasi di latar belakang.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Izinkan akses lokasi untuk mengaktifkan fitur aplikasi.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>App membutuhkan akses ke kamera untuk mengambil foto atau video.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
