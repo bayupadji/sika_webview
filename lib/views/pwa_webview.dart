@@ -99,6 +99,7 @@ class _PwaWebViewState extends State<PwaWebView> {
     return WillPopScope(
       onWillPop: _handleBackPress,
       child: Scaffold(
+        backgroundColor: Colors.white,
         body: SafeArea(
           child: InAppWebView(
             key: webViewKey,
@@ -106,11 +107,13 @@ class _PwaWebViewState extends State<PwaWebView> {
               url: WebUri.uri(Uri.parse(currentUrl)),
             ),
             initialSettings: InAppWebViewSettings(
+              underPageBackgroundColor: Colors.white,
               javaScriptEnabled: true,
               mediaPlaybackRequiresUserGesture: false,
               allowFileAccessFromFileURLs: true,
               allowUniversalAccessFromFileURLs: true,
               allowFileAccess: true,
+              geolocationEnabled: true,
               isInspectable: false,
             ),
             onWebViewCreated: (controller) {
