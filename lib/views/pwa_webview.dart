@@ -1,10 +1,12 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:sika/constants/modal/error_modals.dart';
 import 'package:location/location.dart' as loc;
 import 'package:sika/providers/permission_provider.dart';
+import 'package:sika/views/error_page.dart';
 
 class PwaWebView extends StatefulWidget {
   const PwaWebView({super.key});
@@ -53,7 +55,8 @@ class _PwaWebViewState extends State<PwaWebView> {
       debugPrint('Fake GPS detected. Location will not be sent to WebView.');
       // Menampilkan pesan kesalahan atau notifikasi di WebView jika perlu
       await webViewController.evaluateJavascript(
-        source: """alert('Fake GPS detected. Please disable mock location.');""",
+        source:
+            """alert('Fake GPS detected. Please disable mock location.');""",
       );
       return; // Tidak melanjutkan pengambilan lokasi
     }
@@ -130,30 +133,50 @@ class _PwaWebViewState extends State<PwaWebView> {
             },
             onLoadError: (controller, url, code, message) {
               debugPrint('Error: $message');
-              ErrorModal.showErrorModal(
+              Navigator.push(
                 context,
-                errorMessage: message,
-                onRetry: () {
-                  webViewController.loadUrl(
-                    urlRequest: URLRequest(
-                      url: WebUri.uri(Uri.parse(currentUrl)),
-                    ),
-                  );
-                },
+                MaterialPageRoute(
+                  builder: (context) => ErrorPage(
+                    title: "$code: Oops, terjadi kesalahan!",
+                    descriptions: message,
+                    image: "assets/warning.png",
+                    onPressed: () {
+                      Navigator.pop(context);
+                      webViewController.loadUrl(
+                        urlRequest: URLRequest(
+                          url: WebUri.uri(
+                            Uri.parse(currentUrl)
+                          ),
+                        )
+                      );
+                    },
+                    btnLabel: "Coba Lagi"
+                  )
+                ),
               );
             },
             onLoadHttpError: (controller, url, statusCode, description) {
               debugPrint('HTTP Error: $description (Status Code: $statusCode)');
-              ErrorModal.showErrorModal(
+              Navigator.push(
                 context,
-                errorMessage: description,
-                onRetry: () {
-                  webViewController.loadUrl(
-                    urlRequest: URLRequest(
-                      url: WebUri.uri(Uri.parse(currentUrl)),
-                    ),
-                  );
-                },
+                MaterialPageRoute(
+                  builder: (context) => ErrorPage(
+                    title: "$statusCode: Oops, terjadi kesalahan!",
+                    descriptions: description,
+                    image: "assets/warning.png",
+                    onPressed: () {
+                      Navigator.pop(context);
+                      webViewController.loadUrl(
+                        urlRequest: URLRequest(
+                          url: WebUri.uri(
+                            Uri.parse(currentUrl)
+                          ),
+                        )
+                      );
+                    },
+                    btnLabel: "Coba Lagi"
+                  )
+                ),
               );
             },
           ),
