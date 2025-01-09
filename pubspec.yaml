@@ -9,6 +9,7 @@ environment:
 dependencies:
   camera: ^0.11.0+2
   connectivity_plus: ^6.1.1
+  detect_fake_location: ^2.1.0
   flutter:
     sdk: flutter
   flutter_inappwebview: ^6.1.5

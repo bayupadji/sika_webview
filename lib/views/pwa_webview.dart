@@ -1,8 +1,12 @@
 // ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:sika/constants/modal/error_modals.dart';
+import 'package:provider/provider.dart';
+import 'package:location/location.dart' as loc;
+import 'package:sika/providers/permission_provider.dart';
+import 'package:sika/views/error_page.dart';
 
 class PwaWebView extends StatefulWidget {
   const PwaWebView({super.key});
@@ -14,7 +18,8 @@ class PwaWebView extends StatefulWidget {
 class _PwaWebViewState extends State<PwaWebView> {
   final GlobalKey webViewKey = GlobalKey();
   late InAppWebViewController webViewController;
-  String currentUrl = 'https://rski-karyawan.netlify.app/';
+  // String currentUrl = 'https://rski-karyawan.netlify.app';
+  String currentUrl = 'https://192.168.0.20:4443';
 
   @override
   void initState() {
@@ -36,6 +41,49 @@ class _PwaWebViewState extends State<PwaWebView> {
         debugPrint("Izin $permission diberikan.");
       }
     });
+
+    // Memastikan lokasi yang diterima bukan lokasi palsu
+    await _checkMockLocationAndSend();
+  }
+
+  Future<void> _checkMockLocationAndSend() async {
+    // Mengambil akses ke PermissionProvider dari Provider
+    final permissionProvider =
+        Provider.of<PermissionProvider>(context, listen: false);
+
+    // Mengecek apakah lokasi palsu terdeteksi
+    if (permissionProvider.isMockLocationDetected) {
+      debugPrint('Fake GPS detected. Location will not be sent to WebView.');
+      // Menampilkan pesan kesalahan atau notifikasi di WebView jika perlu
+      await webViewController.evaluateJavascript(
+        source:
+            """alert('Fake GPS detected. Please disable mock location.');""",
+      );
+      return; // Tidak melanjutkan pengambilan lokasi
+    }
+
+    // Jika lokasi bukan fake, kirim data lokasi ke WebView
+    await sendLocationToWebView();
+  }
+
+  Future<void> sendLocationToWebView() async {
+    loc.Location location = loc.Location();
+
+    try {
+      loc.LocationData locationData = await location.getLocation();
+
+      final latitude = locationData.latitude ?? 0.0;
+      final longitude = locationData.longitude ?? 0.0;
+
+      debugPrint('Location: $latitude, $longitude');
+
+      // Kirim lokasi ke WebView menggunakan JavaScript
+      await webViewController.evaluateJavascript(
+        source: """window.updateLocation($latitude, $longitude);""",
+      );
+    } catch (e) {
+      debugPrint('Error fetching location: $e');
+    }
   }
 
   Future<bool> _handleBackPress() async {
@@ -51,6 +99,7 @@ class _PwaWebViewState extends State<PwaWebView> {
     return WillPopScope(
       onWillPop: _handleBackPress,
       child: Scaffold(
+        backgroundColor: Colors.white,
         body: SafeArea(
           child: InAppWebView(
             key: webViewKey,
@@ -58,11 +107,17 @@ class _PwaWebViewState extends State<PwaWebView> {
               url: WebUri.uri(Uri.parse(currentUrl)),
             ),
             initialSettings: InAppWebViewSettings(
+              underPageBackgroundColor: Colors.white,
               javaScriptEnabled: true,
               mediaPlaybackRequiresUserGesture: false,
               allowFileAccessFromFileURLs: true,
               allowUniversalAccessFromFileURLs: true,
               allowFileAccess: true,
+              allowsBackForwardNavigationGestures: true,
+              geolocationEnabled: true,
+              disableDefaultErrorPage: true,
+              networkAvailable: true,
+              alwaysBounceVertical: false,
               isInspectable: false,
             ),
             onWebViewCreated: (controller) {
@@ -84,32 +139,57 @@ class _PwaWebViewState extends State<PwaWebView> {
             onConsoleMessage: (controller, consoleMessage) {
               debugPrint(consoleMessage.message);
             },
+            onReceivedServerTrustAuthRequest: (controller, challenge) async {
+              return ServerTrustAuthResponse(
+                action: ServerTrustAuthResponseAction.PROCEED
+              );
+            },
             onLoadError: (controller, url, code, message) {
-              debugPrint('Error: $message');
-              ErrorModal.showErrorModal(
+              debugPrint('Error $code: $message');
+              Navigator.push(
                 context,
-                errorMessage: message,
-                onRetry: () {
-                  webViewController.loadUrl(
-                    urlRequest: URLRequest(
-                      url: WebUri.uri(Uri.parse(currentUrl)),
-                    ),
-                  );
-                },
+                MaterialPageRoute(
+                  builder: (context) => ErrorPage(
+                    title: "Error $code",
+                    descriptions: "Failed to Load $url: $message",
+                    image: "assets/warning.png",
+                    onPressed: () {
+                      Navigator.pop(context);
+                      webViewController.loadUrl(
+                        urlRequest: URLRequest(
+                          url: WebUri.uri(
+                            Uri.parse(currentUrl)
+                          ),
+                        )
+                      );
+                    },
+                    btnLabel: "Coba Lagi"
+                  )
+                ),
               );
             },
             onLoadHttpError: (controller, url, statusCode, description) {
               debugPrint('HTTP Error: $description (Status Code: $statusCode)');
-              ErrorModal.showErrorModal(
+              Navigator.push(
                 context,
-                errorMessage: description,
-                onRetry: () {
-                  webViewController.loadUrl(
-                    urlRequest: URLRequest(
-                      url: WebUri.uri(Uri.parse(currentUrl)),
-                    ),
-                  );
-                },
+                MaterialPageRoute(
+                  builder: (context) => ErrorPage(
+                    title: "HTTP Error $statusCode",
+                    descriptions: description,
+                    image: "assets/warning.png",
+                    onPressed: () {
+                      Navigator.pop(context);
+                      webViewController.loadUrl(
+                        urlRequest: URLRequest(
+                          url: WebUri.uri(
+                            Uri.parse(currentUrl)
+                          ),
+                        )
+                      );
+                    },
+                    btnLabel: "Coba Lagi"
+                  )
+                ),
               );
             },
           ),
