@@ -116,6 +116,8 @@ class _PwaWebViewState extends State<PwaWebView> {
               allowsBackForwardNavigationGestures: true,
               geolocationEnabled: true,
               disableDefaultErrorPage: true,
+              networkAvailable: true,
+              alwaysBounceVertical: false,
               isInspectable: false,
             ),
             onWebViewCreated: (controller) {
