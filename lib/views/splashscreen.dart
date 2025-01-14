@@ -27,25 +27,23 @@ class _SplashScreenState extends State<SplashScreen> {
 
     return Scaffold(
       body: Center(
-        child: splashProvider.isLoading
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image(
-                    image: AssetImage('assets/main_logo.png'),
-                    width: 250,
-                    height: 250,
-                  ),
-                  SizedBox(
-                    height: 16,
-                  ),
-                  CircularProgressIndicator(
-                    color: Color(0xFF10A9A4)
-                  ),
-                ],
-              )
-            : Container(), // Jika tidak loading, bisa menampilkan konten lain
+        child: splashProvider.isLoading ? Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image(
+              image: AssetImage('assets/main_logo.png'),
+              width: 250,
+              height: 250,
+            ),
+            SizedBox(
+              height: 16,
+            ),
+            CircularProgressIndicator(
+              color: Color(0xFF10A9A4)
+            ),
+          ],
+        ): Container(), // Jika tidak loading, bisa menampilkan konten lain
       ),
     );
   }
