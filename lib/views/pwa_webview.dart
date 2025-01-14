@@ -1,11 +1,11 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:location/location.dart' as loc;
-import 'package:sika/providers/permission_provider.dart';
+import 'package:sika/providers/location_provider.dart';
 import 'package:sika/views/error_page.dart';
 
 class PwaWebView extends StatefulWidget {
@@ -18,8 +18,7 @@ class PwaWebView extends StatefulWidget {
 class _PwaWebViewState extends State<PwaWebView> {
   final GlobalKey webViewKey = GlobalKey();
   late InAppWebViewController webViewController;
-  // String currentUrl = 'https://rski-karyawan.netlify.app';
-  String currentUrl = 'https://192.168.0.20:4443';
+  String currentUrl = 'https://rski-karyawan.netlify.app';
 
   @override
   void initState() {
@@ -27,71 +26,46 @@ class _PwaWebViewState extends State<PwaWebView> {
     _requestPermissions();
   }
 
-  Future<void> _requestPermissions() async {
+Future<void> _requestPermissions() async {
     Map<Permission, PermissionStatus> statuses = await [
       Permission.location,
       Permission.camera,
       Permission.storage,
     ].request();
 
-    statuses.forEach((permission, status) {
-      if (status.isDenied) {
-        debugPrint("Izin $permission ditolak.");
-      } else if (status.isGranted) {
-        debugPrint("Izin $permission diberikan.");
+    // Cek apakah izin diberikan
+    if (statuses.values.any((status) => status.isDenied)) {
+      if (kDebugMode) {
+        print("Some permissions were denied.");
       }
-    });
-
-    // Memastikan lokasi yang diterima bukan lokasi palsu
-    await _checkMockLocationAndSend();
-  }
-
-  Future<void> _checkMockLocationAndSend() async {
-    // Mengambil akses ke PermissionProvider dari Provider
-    final permissionProvider =
-        Provider.of<PermissionProvider>(context, listen: false);
-
-    // Mengecek apakah lokasi palsu terdeteksi
-    if (permissionProvider.isMockLocationDetected) {
-      debugPrint('Fake GPS detected. Location will not be sent to WebView.');
-      // Menampilkan pesan kesalahan atau notifikasi di WebView jika perlu
-      await webViewController.evaluateJavascript(
-        source:
-            """alert('Fake GPS detected. Please disable mock location.');""",
-      );
-      return; // Tidak melanjutkan pengambilan lokasi
     }
 
-    // Jika lokasi bukan fake, kirim data lokasi ke WebView
-    await sendLocationToWebView();
-  }
+    // Memanggil fungsi di provider untuk memeriksa dan mengambil lokasi
+    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+    await locationProvider.checkAndFetchLocation(context);
 
-  Future<void> sendLocationToWebView() async {
-    loc.Location location = loc.Location();
+    // Setelah lokasi berhasil didapatkan, kirim data ke WebView jika mock location tidak terdeteksi
+    if (!locationProvider.isMockLocationDetected && locationProvider.locationData != null) {
+      final latitude = locationProvider.locationData?.latitude ?? 0.0;
+      final longitude = locationProvider.locationData?.longitude ?? 0.0;
 
-    try {
-      loc.LocationData locationData = await location.getLocation();
-
-      final latitude = locationData.latitude ?? 0.0;
-      final longitude = locationData.longitude ?? 0.0;
-
-      debugPrint('Location: $latitude, $longitude');
+      if (kDebugMode) {
+        print('Location: $latitude, $longitude');
+      }
 
       // Kirim lokasi ke WebView menggunakan JavaScript
       await webViewController.evaluateJavascript(
         source: """window.updateLocation($latitude, $longitude);""",
       );
-    } catch (e) {
-      debugPrint('Error fetching location: $e');
     }
   }
 
   Future<bool> _handleBackPress() async {
     if (await webViewController.canGoBack()) {
       webViewController.goBack();
-      return false; // Jangan keluar dari aplikasi, hanya kembali di WebView
+      return false;
     }
-    return true; // Keluar dari aplikasi jika tidak ada halaman sebelumnya
+    return true;
   }
 
   @override
@@ -103,9 +77,7 @@ class _PwaWebViewState extends State<PwaWebView> {
         body: SafeArea(
           child: InAppWebView(
             key: webViewKey,
-            initialUrlRequest: URLRequest(
-              url: WebUri.uri(Uri.parse(currentUrl)),
-            ),
+            initialUrlRequest: URLRequest(url: WebUri.uri(Uri.parse(currentUrl))),
             initialSettings: InAppWebViewSettings(
               underPageBackgroundColor: Colors.white,
               javaScriptEnabled: true,
@@ -141,58 +113,38 @@ class _PwaWebViewState extends State<PwaWebView> {
             },
             onReceivedServerTrustAuthRequest: (controller, challenge) async {
               return ServerTrustAuthResponse(
-                action: ServerTrustAuthResponseAction.PROCEED
+                action: ServerTrustAuthResponseAction.PROCEED,
               );
             },
             onLoadError: (controller, url, code, message) {
               debugPrint('Error $code: $message');
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ErrorPage(
-                    title: "Error $code",
-                    descriptions: "Failed to Load $url: $message",
-                    image: "assets/warning.png",
-                    onPressed: () {
-                      Navigator.pop(context);
-                      webViewController.loadUrl(
-                        urlRequest: URLRequest(
-                          url: WebUri.uri(
-                            Uri.parse(currentUrl)
-                          ),
-                        )
-                      );
-                    },
-                    btnLabel: "Coba Lagi"
-                  )
-                ),
-              );
+              _navigateToErrorPage(code, url.toString(), message);
             },
             onLoadHttpError: (controller, url, statusCode, description) {
               debugPrint('HTTP Error: $description (Status Code: $statusCode)');
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ErrorPage(
-                    title: "HTTP Error $statusCode",
-                    descriptions: description,
-                    image: "assets/warning.png",
-                    onPressed: () {
-                      Navigator.pop(context);
-                      webViewController.loadUrl(
-                        urlRequest: URLRequest(
-                          url: WebUri.uri(
-                            Uri.parse(currentUrl)
-                          ),
-                        )
-                      );
-                    },
-                    btnLabel: "Coba Lagi"
-                  )
-                ),
-              );
+              _navigateToErrorPage(statusCode, url.toString(), description);
             },
           ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToErrorPage(int code, String url, String description) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ErrorPage(
+          title: "Error $code",
+          descriptions: "Failed to Load $url: $description",
+          image: "assets/warning.png",
+          onPressed: () {
+            Navigator.pop(context);
+            webViewController.loadUrl(
+              urlRequest: URLRequest(url: WebUri.uri(Uri.parse(currentUrl))),
+            );
+          },
+          btnLabel: "Coba Lagi",
         ),
       ),
     );
