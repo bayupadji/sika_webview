@@ -25,7 +25,7 @@ class LocationProvider with ChangeNotifier {
           print('Mock location detected. Location access denied.');
         }
 
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => ErrorPage(

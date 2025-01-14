@@ -109,7 +109,9 @@ Future<void> _requestPermissions() async {
               );
             },
             onConsoleMessage: (controller, consoleMessage) {
-              debugPrint(consoleMessage.message);
+              if (kDebugMode) {
+                print(consoleMessage.message);
+              }
             },
             onReceivedServerTrustAuthRequest: (controller, challenge) async {
               return ServerTrustAuthResponse(
