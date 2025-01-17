@@ -92,7 +92,9 @@ Future<void> _requestPermissions() async {
               networkAvailable: true,
               alwaysBounceVertical: false,
               isInspectable: false,
-              verticalScrollBarEnabled: false
+              verticalScrollBarEnabled: false,
+              clearCache: false,
+              clearSessionCache: false,
             ),
             onWebViewCreated: (controller) {
               webViewController = controller;
