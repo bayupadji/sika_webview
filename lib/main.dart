@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:sika/providers/location_provider.dart';
 import 'package:sika/providers/permission_provider.dart';
 import 'package:sika/providers/splash_provider.dart';
 import 'package:sika/views/splashscreen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load();
   runApp(const MainApp());
 }
 
