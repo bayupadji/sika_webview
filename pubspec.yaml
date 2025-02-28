@@ -1,7 +1,7 @@
 name: sika
 description: "Sistem Informasi Karyawan Kasih Ibu"
 publish_to: 'none'
-version: 0.1.0
+version: 1.0.0
 
 environment:
   sdk: ^3.6.0
@@ -12,6 +12,7 @@ dependencies:
   detect_fake_location: ^2.1.0
   flutter:
     sdk: flutter
+  flutter_dotenv: ^5.2.1
   flutter_inappwebview: ^6.1.5
   flutter_launcher_icons: ^0.14.2
   location: ^7.0.1
@@ -28,6 +29,7 @@ flutter:
 
   assets:
   - assets/
+  - .env
 
 flutter_launcher_icons:
   image_path: "assets/app_icon.png"

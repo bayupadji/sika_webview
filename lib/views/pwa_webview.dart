@@ -2,6 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -18,16 +19,26 @@ class PwaWebView extends StatefulWidget {
 class _PwaWebViewState extends State<PwaWebView> {
   final GlobalKey webViewKey = GlobalKey();
   late InAppWebViewController webViewController;
-  // String currentUrl = 'https://192.168.0.20:4443';
-  String currentUrl = 'https://rski-karyawan.netlify.app';
+  String? currentUrl;
 
   @override
   void initState() {
     super.initState();
     _requestPermissions();
+    _checkEnv();
   }
 
-Future<void> _requestPermissions() async {
+  void _checkEnv() {
+    currentUrl = dotenv.env['CURRENT_URL'];
+
+    if (currentUrl == null || currentUrl!.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _navigateToErrorPage(500, "Environment Config", "CURRENT_URL is missing or invalid in .env file");
+      });
+    }
+  }
+
+  Future<void> _requestPermissions() async {
     Map<Permission, PermissionStatus> statuses = await [
       Permission.location,
       Permission.camera,
@@ -42,11 +53,13 @@ Future<void> _requestPermissions() async {
     }
 
     // Memanggil fungsi di provider untuk memeriksa dan mengambil lokasi
-    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+    final locationProvider =
+        Provider.of<LocationProvider>(context, listen: false);
     await locationProvider.checkAndFetchLocation(context);
 
     // Setelah lokasi berhasil didapatkan, kirim data ke WebView jika mock location tidak terdeteksi
-    if (!locationProvider.isMockLocationDetected && locationProvider.locationData != null) {
+    if (!locationProvider.isMockLocationDetected &&
+        locationProvider.locationData != null) {
       final latitude = locationProvider.locationData?.latitude ?? 0.0;
       final longitude = locationProvider.locationData?.longitude ?? 0.0;
 
@@ -78,22 +91,25 @@ Future<void> _requestPermissions() async {
         body: SafeArea(
           child: InAppWebView(
             key: webViewKey,
-            initialUrlRequest: URLRequest(url: WebUri.uri(Uri.parse(currentUrl))),
+            initialUrlRequest:
+                URLRequest(url: WebUri.uri(Uri.parse(currentUrl!))),
             initialSettings: InAppWebViewSettings(
-              underPageBackgroundColor: Colors.white,
-              javaScriptEnabled: true,
-              mediaPlaybackRequiresUserGesture: false,
-              allowFileAccessFromFileURLs: true,
-              allowUniversalAccessFromFileURLs: true,
-              allowFileAccess: true,
-              allowsBackForwardNavigationGestures: true,
-              geolocationEnabled: true,
-              disableDefaultErrorPage: true,
-              networkAvailable: true,
-              alwaysBounceVertical: false,
-              isInspectable: false,
-              verticalScrollBarEnabled: false
-            ),
+                underPageBackgroundColor: Colors.white,
+                javaScriptEnabled: true,
+                mediaPlaybackRequiresUserGesture: false,
+                allowFileAccessFromFileURLs: true,
+                allowUniversalAccessFromFileURLs: true,
+                allowFileAccess: true,
+                allowsBackForwardNavigationGestures: true,
+                geolocationEnabled: true,
+                disableDefaultErrorPage: true,
+                networkAvailable: true,
+                alwaysBounceVertical: false,
+                isInspectable: false,
+                verticalScrollBarEnabled: false,
+                clearCache: false,
+                clearSessionCache: false,
+                thirdPartyCookiesEnabled: false),
             onWebViewCreated: (controller) {
               webViewController = controller;
             },
@@ -145,7 +161,7 @@ Future<void> _requestPermissions() async {
           onPressed: () {
             Navigator.pop(context);
             webViewController.loadUrl(
-              urlRequest: URLRequest(url: WebUri.uri(Uri.parse(currentUrl))),
+              urlRequest: URLRequest(url: WebUri.uri(Uri.parse(currentUrl!))),
             );
           },
           btnLabel: "Coba Lagi",
