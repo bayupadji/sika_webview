@@ -29,6 +29,7 @@ flutter:
 
   assets:
   - assets/
+  - .env
 
 flutter_launcher_icons:
   image_path: "assets/app_icon.png"

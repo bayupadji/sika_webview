@@ -92,7 +92,7 @@ class _PwaWebViewState extends State<PwaWebView> {
           child: InAppWebView(
             key: webViewKey,
             initialUrlRequest:
-                URLRequest(url: WebUri.uri(Uri.parse(currentUrl))),
+                URLRequest(url: WebUri.uri(Uri.parse(currentUrl!))),
             initialSettings: InAppWebViewSettings(
                 underPageBackgroundColor: Colors.white,
                 javaScriptEnabled: true,
@@ -161,7 +161,7 @@ class _PwaWebViewState extends State<PwaWebView> {
           onPressed: () {
             Navigator.pop(context);
             webViewController.loadUrl(
-              urlRequest: URLRequest(url: WebUri.uri(Uri.parse(currentUrl))),
+              urlRequest: URLRequest(url: WebUri.uri(Uri.parse(currentUrl!))),
             );
           },
           btnLabel: "Coba Lagi",
