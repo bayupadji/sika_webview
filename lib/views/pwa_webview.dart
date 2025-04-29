@@ -2,6 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -29,7 +30,7 @@ class _PwaWebViewState extends State<PwaWebView> {
   }
 
   void _checkEnv() {
-    currentUrl = dotenv.env['CURRENT_URL'];
+    currentUrl = dotenv.env['PUBLIC_URL'];
 
     if (currentUrl == null || currentUrl!.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -82,6 +83,20 @@ class _PwaWebViewState extends State<PwaWebView> {
     return true;
   }
 
+  // downloadFile using mediaStore
+  static const platform = MethodChannel('com.example.download');
+
+  Future<void> downloadFileWithMediaStore(String url, String filename) async {
+  try {
+    await platform.invokeMethod('saveFileToDownloads', {
+      'url': url,
+      'fileName': filename,
+    });
+  } on PlatformException catch (e) {
+    debugPrint("Download failed: ${e.message}");
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -91,25 +106,27 @@ class _PwaWebViewState extends State<PwaWebView> {
         body: SafeArea(
           child: InAppWebView(
             key: webViewKey,
-            initialUrlRequest:
-                URLRequest(url: WebUri.uri(Uri.parse(currentUrl!))),
+            initialUrlRequest: URLRequest(url: WebUri.uri(
+              Uri.parse(currentUrl!)
+            )),
             initialSettings: InAppWebViewSettings(
-                underPageBackgroundColor: Colors.white,
-                javaScriptEnabled: true,
-                mediaPlaybackRequiresUserGesture: false,
-                allowFileAccessFromFileURLs: true,
-                allowUniversalAccessFromFileURLs: true,
-                allowFileAccess: true,
-                allowsBackForwardNavigationGestures: true,
-                geolocationEnabled: true,
-                disableDefaultErrorPage: true,
-                networkAvailable: true,
-                alwaysBounceVertical: false,
-                isInspectable: false,
-                verticalScrollBarEnabled: false,
-                clearCache: false,
-                clearSessionCache: false,
-                thirdPartyCookiesEnabled: false),
+              underPageBackgroundColor: Colors.white,
+              javaScriptEnabled: true,
+              mediaPlaybackRequiresUserGesture: false,
+              allowFileAccessFromFileURLs: true,
+              allowUniversalAccessFromFileURLs: true,
+              allowFileAccess: true,
+              allowsBackForwardNavigationGestures: true,
+              geolocationEnabled: true,
+              disableDefaultErrorPage: true,
+              networkAvailable: true,
+              alwaysBounceVertical: false,
+              isInspectable: false,
+              verticalScrollBarEnabled: false,
+              clearCache: false,
+              clearSessionCache: false,
+              thirdPartyCookiesEnabled: false
+            ),
             onWebViewCreated: (controller) {
               webViewController = controller;
             },
@@ -143,6 +160,17 @@ class _PwaWebViewState extends State<PwaWebView> {
             onLoadHttpError: (controller, url, statusCode, description) {
               debugPrint('HTTP Error: $description (Status Code: $statusCode)');
               _navigateToErrorPage(statusCode, url.toString(), description);
+            },
+            onDownloadStartRequest: (controller, request) async {
+              final filename = request.suggestedFilename ?? 'file-download';
+              final url = request.url.toString();
+
+              final status = await Permission.storage.request();
+              if (status.isGranted) {
+                await downloadFileWithMediaStore(url, filename);
+              } else {
+                debugPrint("Storage permission denied.");
+              }
             },
           ),
         ),
