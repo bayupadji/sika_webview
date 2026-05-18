@@ -1,4 +1,5 @@
-// ignore_for_file: use_build_context_synchronously
+
+import 'dart:async';
 
 import 'package:detect_fake_location/detect_fake_location.dart';
 import 'package:flutter/foundation.dart';
@@ -10,6 +11,11 @@ class LocationProvider with ChangeNotifier {
   loc.Location location = loc.Location();
   bool _isMockLocationDetected = false;
   loc.LocationData? _locationData;
+  StreamSubscription<loc.LocationData>? _locationSubscription;
+
+  // Callback yang akan dipanggil setiap kali lokasi berubah
+  // Digunakan oleh PwaWebView untuk mengirim update ke WebView
+  Function(double lat, double lng)? onLocationUpdate;
 
   bool get isMockLocationDetected => _isMockLocationDetected;
   loc.LocationData? get locationData => _locationData;
@@ -30,7 +36,8 @@ class LocationProvider with ChangeNotifier {
           MaterialPageRoute(
             builder: (context) => ErrorPage(
               title: "GPS Palsu Terdeteksi",
-              descriptions: "Nonaktifkan Mock Location di pengaturan perangkat Anda.",
+              descriptions:
+                  "Nonaktifkan Mock Location di pengaturan perangkat Anda.",
               image: "assets/warning.png",
               onPressed: () {
                 Navigator.pop(context);
@@ -42,18 +49,82 @@ class LocationProvider with ChangeNotifier {
         return; // Berhenti jika mock location terdeteksi
       }
 
-      // Ambil data lokasi jika tidak ada mock location
+      // Ambil data lokasi pertama kali
       _locationData = await location.getLocation();
       if (kDebugMode) {
-        print('Location: ${_locationData?.latitude}, ${_locationData?.longitude}');
+        print(
+          'Initial Location: ${_locationData?.latitude}, ${_locationData?.longitude}',
+        );
       }
+
+      notifyListeners();
     } catch (e) {
       if (kDebugMode) {
         print('Error fetching location: $e');
       }
-    } finally {
-      notifyListeners(); // Beritahu perubahan status
     }
   }
-}
 
+  /// Mulai streaming lokasi real-time.
+  /// Setiap update lokasi akan memanggil [onLocationUpdate] jika sudah di-set.
+  Future<void> startLocationStream() async {
+    // Pastikan tidak ada stream yang berjalan sebelumnya
+    await _locationSubscription?.cancel();
+
+    try {
+      // Konfigurasi location untuk update yang lebih responsif
+      await location.changeSettings(
+        accuracy: loc.LocationAccuracy.high,
+        interval: 3000, // update setiap 3 detik
+        distanceFilter: 5, // hanya update jika bergerak > 5 meter
+      );
+
+      _locationSubscription = location.onLocationChanged.listen(
+        (loc.LocationData newLocation) {
+          _locationData = newLocation;
+          notifyListeners();
+
+          final lat = newLocation.latitude ?? 0.0;
+          final lng = newLocation.longitude ?? 0.0;
+
+          if (kDebugMode) {
+            print('Location Update: $lat, $lng');
+          }
+
+          // Kirim update ke WebView jika callback sudah di-set
+          onLocationUpdate?.call(lat, lng);
+        },
+        onError: (error) {
+          if (kDebugMode) {
+            print('Location stream error: $error');
+          }
+        },
+      );
+
+      if (kDebugMode) {
+        print('Location streaming started.');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error starting location stream: $e');
+      }
+    }
+  }
+
+  /// Hentikan streaming lokasi dan bersihkan subscription.
+  Future<void> stopLocationStream() async {
+    await _locationSubscription?.cancel();
+    _locationSubscription = null;
+    onLocationUpdate = null;
+
+    if (kDebugMode) {
+      print('Location streaming stopped.');
+    }
+  }
+
+  @override
+  void dispose() {
+    stopLocationStream();
+    super.dispose();
+  }
+}

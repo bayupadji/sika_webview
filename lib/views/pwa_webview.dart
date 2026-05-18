@@ -1,5 +1,6 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously
 
+import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,14 +20,21 @@ class PwaWebView extends StatefulWidget {
 
 class _PwaWebViewState extends State<PwaWebView> {
   final GlobalKey webViewKey = GlobalKey();
-  late InAppWebViewController webViewController;
+  InAppWebViewController? webViewController;
   String? currentUrl;
+
+  // Flag: apakah halaman web sudah selesai load & siap menerima JS
+  bool _isWebViewReady = false;
+
+  // Simpan koordinat terakhir agar bisa dikirim saat WebView siap
+  double? _pendingLat;
+  double? _pendingLng;
 
   @override
   void initState() {
     super.initState();
-    _requestPermissions();
     _checkEnv();
+    _setupLocationAndPermissions();
   }
 
   void _checkEnv() {
@@ -34,53 +42,173 @@ class _PwaWebViewState extends State<PwaWebView> {
 
     if (currentUrl == null || currentUrl!.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _navigateToErrorPage(500, "Environment Config", "CURRENT_URL is missing or invalid in .env file");
+        _navigateToErrorPage(
+          500,
+          "Environment Config",
+          "CURRENT_URL is missing or invalid in .env file",
+        );
       });
     }
   }
 
+  Future<void> _setupLocationAndPermissions() async {
+    // 1. Minta izin
+    await _requestPermissions();
+
+    // 2. Ambil lokasi pertama kali & cek mock
+    final locationProvider = Provider.of<LocationProvider>(
+      context,
+      listen: false,
+    );
+    await locationProvider.checkAndFetchLocation(context);
+
+    // Jika mock location terdeteksi, hentikan di sini
+    if (locationProvider.isMockLocationDetected) return;
+
+    // 3. Simpan koordinat awal sebagai pending (dikirim saat WebView ready)
+    if (locationProvider.locationData != null) {
+      _pendingLat = locationProvider.locationData?.latitude ?? 0.0;
+      _pendingLng = locationProvider.locationData?.longitude ?? 0.0;
+
+      if (kDebugMode) {
+        print('Initial location ready: $_pendingLat, $_pendingLng');
+      }
+
+      // Jika WebView sudah siap duluan, langsung kirim
+      if (_isWebViewReady) {
+        await _updateGeolocationInWebView(_pendingLat!, _pendingLng!);
+      }
+    }
+
+    // 4. Set callback real-time dan mulai streaming
+    locationProvider.onLocationUpdate = (double lat, double lng) {
+      _pendingLat = lat;
+      _pendingLng = lng;
+
+      // Hanya kirim jika WebView sudah siap
+      if (_isWebViewReady) {
+        _updateGeolocationInWebView(lat, lng);
+      }
+    };
+    await locationProvider.startLocationStream();
+  }
+
   Future<void> _requestPermissions() async {
-    Map<Permission, PermissionStatus> statuses = await [
+    final statuses = await [
       Permission.location,
       Permission.camera,
       Permission.storage,
     ].request();
 
-    // Cek apakah izin diberikan
     if (statuses.values.any((status) => status.isDenied)) {
       if (kDebugMode) {
         print("Some permissions were denied.");
       }
     }
+  }
 
-    // Memanggil fungsi di provider untuk memeriksa dan mengambil lokasi
-    final locationProvider =
-        Provider.of<LocationProvider>(context, listen: false);
-    await locationProvider.checkAndFetchLocation(context);
+  /// Script yang di-inject sebelum JS halaman berjalan.
+  /// Memasang antrian (queue) agar panggilan geolocation tidak hilang
+  /// sebelum Flutter mengirim koordinat pertama kali.
+  static String get _geolocationQueueScript => """
+    (function() {
+      var _pendingGetCurrent = [];
+      var _watchCallbacks = {};
+      var _watchIdCounter = 1;
+      var _hasCoords = false;
+      var _lat = 0, _lng = 0;
+      var _accuracy = 10;
 
-    // Setelah lokasi berhasil didapatkan, kirim data ke WebView jika mock location tidak terdeteksi
-    if (!locationProvider.isMockLocationDetected &&
-        locationProvider.locationData != null) {
-      final latitude = locationProvider.locationData?.latitude ?? 0.0;
-      final longitude = locationProvider.locationData?.longitude ?? 0.0;
-
-      if (kDebugMode) {
-        print('Location: $latitude, $longitude');
+      function makePosition(lat, lng) {
+        return {
+          coords: {
+            latitude: lat, longitude: lng,
+            accuracy: _accuracy,
+            altitude: null, altitudeAccuracy: null,
+            heading: null, speed: null
+          },
+          timestamp: Date.now()
+        };
       }
 
-      // Kirim lokasi ke WebView menggunakan JavaScript
-      await webViewController.evaluateJavascript(
-        source: """window.updateLocation($latitude, $longitude);""",
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition = function(success, error, options) {
+          if (_hasCoords) {
+            try { success(makePosition(_lat, _lng)); } catch(e) {}
+          } else {
+            _pendingGetCurrent.push(success);
+          }
+        };
+
+        navigator.geolocation.watchPosition = function(success, error, options) {
+          var watchId = _watchIdCounter++;
+          _watchCallbacks[watchId] = success;
+          if (_hasCoords) {
+            try { success(makePosition(_lat, _lng)); } catch(e) {}
+          }
+          return watchId;
+        };
+
+        navigator.geolocation.clearWatch = function(watchId) {
+          delete _watchCallbacks[watchId];
+        };
+      }
+
+      window.__flutterUpdateGeolocation = function(lat, lng) {
+        _lat = lat; _lng = lng; _hasCoords = true;
+
+        // Flush antrian getCurrentPosition
+        var pending = _pendingGetCurrent.splice(0);
+        for (var i = 0; i < pending.length; i++) {
+          try { pending[i](makePosition(lat, lng)); } catch(e) {}
+        }
+
+        // Notifikasi semua watcher aktif
+        for (var id in _watchCallbacks) {
+          try { _watchCallbacks[id](makePosition(lat, lng)); } catch(e) {}
+        }
+
+        console.log('[Flutter GPS] Coords updated: ' + lat + ', ' + lng);
+      };
+
+      console.log('[Flutter GPS] Geolocation queue override installed.');
+    })();
+  """;
+
+  /// Untuk update real-time setelah override sudah ada — lebih ringan dari inject ulang penuh
+  Future<void> _updateGeolocationInWebView(double lat, double lng) async {
+    if (webViewController == null || !_isWebViewReady) return;
+
+    try {
+      await webViewController!.evaluateJavascript(
+        source:
+            "if (window.__flutterUpdateGeolocation) { window.__flutterUpdateGeolocation($lat, $lng); }",
       );
+    } catch (e) {
+      if (kDebugMode) {
+        print('[Flutter] Geolocation update error: $e');
+      }
     }
   }
 
-  Future<bool> _handleBackPress() async {
-    if (await webViewController.canGoBack()) {
-      webViewController.goBack();
-      return false;
+  Future<void> _handleBackPress(bool didPop, dynamic result) async {
+    if (didPop) return;
+    if (webViewController != null && await webViewController!.canGoBack()) {
+      webViewController!.goBack();
+    } else {
+      if (mounted) Navigator.of(context).pop(result);
     }
-    return true;
+  }
+
+  @override
+  void dispose() {
+    // Hentikan streaming lokasi saat widget di-dispose
+    final locationProvider = Provider.of<LocationProvider>(
+      context,
+      listen: false,
+    );
+    locationProvider.stopLocationStream();
+    super.dispose();
   }
 
   // downloadFile using mediaStore
@@ -99,8 +227,9 @@ class _PwaWebViewState extends State<PwaWebView> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _handleBackPress,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: _handleBackPress,
       child: Scaffold(
         backgroundColor: Colors.white,
         body: SafeArea(
@@ -129,6 +258,26 @@ class _PwaWebViewState extends State<PwaWebView> {
             ),
             onWebViewCreated: (controller) {
               webViewController = controller;
+              if (kDebugMode) {
+                print('[Flutter] WebViewController created.');
+              }
+            },
+            onLoadStop: (controller, url) async {
+              // Halaman sudah selesai load — tandai siap
+              _isWebViewReady = true;
+
+              if (kDebugMode) {
+                print('[Flutter] Page loaded: $url');
+              }
+
+              // Kirim koordinat ke queue override yang sudah terpasang
+              if (_pendingLat != null && _pendingLng != null) {
+                await _updateGeolocationInWebView(_pendingLat!, _pendingLng!);
+              }
+            },
+            onLoadStart: (controller, url) {
+              // Reset flag saat navigasi ke halaman baru
+              _isWebViewReady = false;
             },
             onPermissionRequest: (controller, request) async {
               return PermissionResponse(
@@ -145,7 +294,7 @@ class _PwaWebViewState extends State<PwaWebView> {
             },
             onConsoleMessage: (controller, consoleMessage) {
               if (kDebugMode) {
-                print(consoleMessage.message);
+                print('[WebView Console] ${consoleMessage.message}');
               }
             },
             onReceivedServerTrustAuthRequest: (controller, challenge) async {
@@ -153,13 +302,23 @@ class _PwaWebViewState extends State<PwaWebView> {
                 action: ServerTrustAuthResponseAction.PROCEED,
               );
             },
-            onLoadError: (controller, url, code, message) {
+            onReceivedError: (controller, request, error) {
+              // Abaikan error sub-resource (gambar, font, API, dll)
+              if (!(request.isForMainFrame ?? false)) return;
+              final url = request.url.toString();
+              final code = error.type.toNativeValue() ?? -1;
+              final message = error.description;
               debugPrint('Error $code: $message');
-              _navigateToErrorPage(code, url.toString(), message);
+              _navigateToErrorPage(code, url, message);
             },
-            onLoadHttpError: (controller, url, statusCode, description) {
+            onReceivedHttpError: (controller, request, errorResponse) {
+              // Abaikan error sub-resource (gambar, font, API, dll)
+              if (!(request.isForMainFrame ?? false)) return;
+              final url = request.url.toString();
+              final statusCode = errorResponse.statusCode ?? 0;
+              final description = errorResponse.reasonPhrase ?? 'Unknown HTTP Error';
               debugPrint('HTTP Error: $description (Status Code: $statusCode)');
-              _navigateToErrorPage(statusCode, url.toString(), description);
+              _navigateToErrorPage(statusCode, url, description);
             },
             onDownloadStartRequest: (controller, request) async {
               final filename = request.suggestedFilename ?? 'file-download';
@@ -188,8 +347,10 @@ class _PwaWebViewState extends State<PwaWebView> {
           image: "assets/warning.png",
           onPressed: () {
             Navigator.pop(context);
-            webViewController.loadUrl(
-              urlRequest: URLRequest(url: WebUri.uri(Uri.parse(currentUrl!))),
+            webViewController?.loadUrl(
+              urlRequest: URLRequest(
+                url: WebUri.uri(Uri.parse(currentUrl!)),
+              ),
             );
           },
           btnLabel: "Coba Lagi",
