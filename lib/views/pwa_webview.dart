@@ -1,6 +1,5 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -38,7 +37,7 @@ class _PwaWebViewState extends State<PwaWebView> {
   }
 
   void _checkEnv() {
-    currentUrl = dotenv.env['PUBLIC_URL'];
+    currentUrl = dotenv.env['PROD_URL'];
 
     if (currentUrl == null || currentUrl!.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -65,7 +64,27 @@ class _PwaWebViewState extends State<PwaWebView> {
     // Jika mock location terdeteksi, hentikan di sini
     if (locationProvider.isMockLocationDetected) return;
 
-    // 3. Simpan koordinat awal sebagai pending (dikirim saat WebView ready)
+    // 3. Pantau perubahan state — jika mock terdeteksi di tengah sesi,
+    //    tampilkan error page secara otomatis
+    locationProvider.addListener(() {
+      if (locationProvider.isMockLocationDetected && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ErrorPage(
+              title: "GPS Palsu Terdeteksi",
+              descriptions:
+                  "Nonaktifkan Mock Location di pengaturan perangkat Anda.",
+              image: "assets/warning.png",
+              onPressed: () => Navigator.pop(context),
+              btnLabel: "Kembali",
+            ),
+          ),
+        );
+      }
+    });
+
+    // 4. Simpan koordinat awal sebagai pending (dikirim saat WebView ready)
     if (locationProvider.locationData != null) {
       _pendingLat = locationProvider.locationData?.latitude ?? 0.0;
       _pendingLng = locationProvider.locationData?.longitude ?? 0.0;
@@ -80,7 +99,7 @@ class _PwaWebViewState extends State<PwaWebView> {
       }
     }
 
-    // 4. Set callback real-time dan mulai streaming
+    // 5. Set callback real-time dan mulai streaming
     locationProvider.onLocationUpdate = (double lat, double lng) {
       _pendingLat = lat;
       _pendingLng = lng;

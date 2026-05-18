@@ -80,7 +80,27 @@ class LocationProvider with ChangeNotifier {
       );
 
       _locationSubscription = location.onLocationChanged.listen(
-        (loc.LocationData newLocation) {
+        (loc.LocationData newLocation) async {
+          // Cek flag isMock dari native Android (tersedia di Android 6+)
+          final bool nativeMock = newLocation.isMock ?? false;
+
+          // Cek ulang via detect_fake_location setiap update
+          bool pluginMock = false;
+          try {
+            pluginMock = await DetectFakeLocation().detectFakeLocation();
+          } catch (_) {}
+
+          if (nativeMock || pluginMock) {
+            _isMockLocationDetected = true;
+            if (kDebugMode) {
+              print('[LocationProvider] Mock location detected on stream update!');
+            }
+            // Hentikan stream dan beri tahu listener
+            await stopLocationStream();
+            notifyListeners();
+            return;
+          }
+
           _locationData = newLocation;
           notifyListeners();
 
