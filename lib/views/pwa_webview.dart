@@ -3,11 +3,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sika/providers/location_provider.dart';
+import 'package:sika/utils/env_config.dart';
 import 'package:sika/views/error_page.dart';
 
 class PwaWebView extends StatefulWidget {
@@ -37,7 +37,7 @@ class _PwaWebViewState extends State<PwaWebView> {
   }
 
   void _checkEnv() {
-    currentUrl = dotenv.env['PROD_URL'];
+    currentUrl = EnvConfig.prodUrl;
 
     if (currentUrl == null || currentUrl!.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
