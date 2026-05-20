@@ -1,5 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -55,6 +53,8 @@ class _PwaWebViewState extends State<PwaWebView> {
     await _requestPermissions();
 
     // 2. Ambil lokasi pertama kali & cek mock
+    // Guard: pastikan widget masih terpasang setelah await _requestPermissions
+    if (!mounted) return;
     final locationProvider = Provider.of<LocationProvider>(
       context,
       listen: false,
@@ -63,6 +63,9 @@ class _PwaWebViewState extends State<PwaWebView> {
 
     // Jika mock location terdeteksi, hentikan di sini
     if (locationProvider.isMockLocationDetected) return;
+
+    // Guard: pastikan widget masih terpasang setelah await checkAndFetchLocation
+    if (!mounted) return;
 
     // 3. Pantau perubahan state — jika mock terdeteksi di tengah sesi,
     //    tampilkan error page secara otomatis
@@ -76,8 +79,8 @@ class _PwaWebViewState extends State<PwaWebView> {
               descriptions:
                   "Nonaktifkan Mock Location di pengaturan perangkat Anda.",
               image: "assets/warning.png",
-              onPressed: () => Navigator.pop(context),
-              btnLabel: "Kembali",
+              onPressed: () => _retryAfterMockDetected(),
+              btnLabel: "Coba Lagi",
             ),
           ),
         );
@@ -125,74 +128,6 @@ class _PwaWebViewState extends State<PwaWebView> {
       }
     }
   }
-
-  /// Script yang di-inject sebelum JS halaman berjalan.
-  /// Memasang antrian (queue) agar panggilan geolocation tidak hilang
-  /// sebelum Flutter mengirim koordinat pertama kali.
-  static String get _geolocationQueueScript => """
-    (function() {
-      var _pendingGetCurrent = [];
-      var _watchCallbacks = {};
-      var _watchIdCounter = 1;
-      var _hasCoords = false;
-      var _lat = 0, _lng = 0;
-      var _accuracy = 10;
-
-      function makePosition(lat, lng) {
-        return {
-          coords: {
-            latitude: lat, longitude: lng,
-            accuracy: _accuracy,
-            altitude: null, altitudeAccuracy: null,
-            heading: null, speed: null
-          },
-          timestamp: Date.now()
-        };
-      }
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition = function(success, error, options) {
-          if (_hasCoords) {
-            try { success(makePosition(_lat, _lng)); } catch(e) {}
-          } else {
-            _pendingGetCurrent.push(success);
-          }
-        };
-
-        navigator.geolocation.watchPosition = function(success, error, options) {
-          var watchId = _watchIdCounter++;
-          _watchCallbacks[watchId] = success;
-          if (_hasCoords) {
-            try { success(makePosition(_lat, _lng)); } catch(e) {}
-          }
-          return watchId;
-        };
-
-        navigator.geolocation.clearWatch = function(watchId) {
-          delete _watchCallbacks[watchId];
-        };
-      }
-
-      window.__flutterUpdateGeolocation = function(lat, lng) {
-        _lat = lat; _lng = lng; _hasCoords = true;
-
-        // Flush antrian getCurrentPosition
-        var pending = _pendingGetCurrent.splice(0);
-        for (var i = 0; i < pending.length; i++) {
-          try { pending[i](makePosition(lat, lng)); } catch(e) {}
-        }
-
-        // Notifikasi semua watcher aktif
-        for (var id in _watchCallbacks) {
-          try { _watchCallbacks[id](makePosition(lat, lng)); } catch(e) {}
-        }
-
-        console.log('[Flutter GPS] Coords updated: ' + lat + ', ' + lng);
-      };
-
-      console.log('[Flutter GPS] Geolocation queue override installed.');
-    })();
-  """;
 
   /// Untuk update real-time setelah override sudah ada — lebih ringan dari inject ulang penuh
   Future<void> _updateGeolocationInWebView(double lat, double lng) async {
@@ -356,7 +291,38 @@ class _PwaWebViewState extends State<PwaWebView> {
     );
   }
 
+  /// Re-check mock location saat user menekan "Coba Lagi" dari error mock.
+  /// Hanya kembali ke WebView jika mock sudah tidak terdeteksi.
+  Future<void> _retryAfterMockDetected() async {
+    final locationProvider = Provider.of<LocationProvider>(
+      context,
+      listen: false,
+    );
+
+    // Cek ulang status lokasi
+    await locationProvider.checkAndFetchLocation(context);
+
+    if (!mounted) return;
+
+    if (locationProvider.isMockLocationDetected) {
+      // Mock masih aktif — tampilkan snackbar peringatan, tetap di error page
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Mock Location masih aktif. Nonaktifkan terlebih dahulu.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } else {
+      // Mock sudah dinonaktifkan — kembali ke WebView dan reload
+      Navigator.pop(context);
+      webViewController?.reload();
+    }
+  }
+
   void _navigateToErrorPage(int code, String url, String description) {
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -364,13 +330,10 @@ class _PwaWebViewState extends State<PwaWebView> {
           title: "Error $code",
           descriptions: "Failed to Load $url: $description",
           image: "assets/warning.png",
-          onPressed: () {
+          onPressed: () async {
             Navigator.pop(context);
-            webViewController?.loadUrl(
-              urlRequest: URLRequest(
-                url: WebUri.uri(Uri.parse(currentUrl!)),
-              ),
-            );
+            await Future.delayed(const Duration(milliseconds: 300));
+            webViewController?.reload();
           },
           btnLabel: "Coba Lagi",
         ),

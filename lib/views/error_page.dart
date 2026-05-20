@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:sika/constants/button/outline_btn.dart';
+import 'package:sika/constants/button/default_btn.dart';
 
 class ErrorPage extends StatelessWidget {
   final String descriptions;
   final String title;
   final String btnLabel;
   final String image;
-  final VoidCallback? onPressed;
+  final Future<void> Function()? onPressed;
 
   const ErrorPage({
     super.key,

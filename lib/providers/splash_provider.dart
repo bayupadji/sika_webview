@@ -25,11 +25,16 @@ class SplashProvider with ChangeNotifier {
       setLoading(true);
       await Future.delayed(const Duration(seconds: 3));
 
-      // Periksa konektivitas
+      // Periksa konektivitas — checkConnectivity() mengembalikan List<ConnectivityResult>
       final connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        throw Exception("Tidak ada koneksi internet. Silakan periksa koneksi Anda.");
+      if (connectivityResult.isEmpty ||
+          connectivityResult.every((r) => r == ConnectivityResult.none)) {
+        throw Exception(
+            "Tidak ada koneksi internet. Silakan periksa koneksi Anda.");
       }
+
+      // Guard: pastikan widget masih terpasang setelah async gap
+      if (!context.mounted) return;
 
       // Navigasi ke halaman berikutnya jika ada koneksi
       Navigator.pushReplacement(
@@ -42,12 +47,15 @@ class SplashProvider with ChangeNotifier {
       setLoading(false);
       setErrorMessage(e.toString());
 
+      // Guard: pastikan widget masih terpasang setelah async gap
+      if (!context.mounted) return;
+
       // Tampilkan pesan error menggunakan SnackBar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             e.toString(),
-            style: TextStyle(color: Colors.white),
+            style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: Colors.red,
         ),

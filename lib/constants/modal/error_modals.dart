@@ -1,12 +1,12 @@
 // error_modal.dart
 import 'package:flutter/material.dart';
-import 'package:sika/constants/button/outline_btn.dart';
+import 'package:sika/constants/button/default_btn.dart';
 
 class ErrorModal {
   static void showErrorModal(
     BuildContext context, {
     required String errorMessage,
-    required VoidCallback onRetry,
+    required Future<void> Function() onRetry,
   }) {
     showDialog(
       context: context,
@@ -31,9 +31,9 @@ class ErrorModal {
               width: double.infinity,
               child: DefaultButton(
                 label: "Coba Lagi", 
-                onPressed: () {
+                onPressed: () async {
                   Navigator.of(context).pop();
-                  onRetry();
+                  await onRetry();
                 }, 
                 bgColor: Color(0xFF10A9A4),
                 fgColor: Colors.white,

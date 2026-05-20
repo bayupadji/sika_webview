@@ -31,6 +31,8 @@ class LocationProvider with ChangeNotifier {
           print('Mock location detected. Location access denied.');
         }
 
+        // Guard: pastikan widget masih terpasang setelah async gap
+        if (!context.mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -39,7 +41,7 @@ class LocationProvider with ChangeNotifier {
               descriptions:
                   "Nonaktifkan Mock Location di pengaturan perangkat Anda.",
               image: "assets/warning.png",
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context);
               },
               btnLabel: "Kembali",
