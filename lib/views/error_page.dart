@@ -34,23 +34,23 @@ class ErrorPage extends StatelessWidget {
                       image,
                       width: double.infinity,
                     ),
-                    SizedBox(height: 16,),
+                    SizedBox(
+                      height: 16,
+                    ),
                     Text(
                       title,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold
-                      ),
+                          fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    SizedBox(height: 8,),
+                    SizedBox(
+                      height: 8,
+                    ),
                     Text(
                       descriptions,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF828282)
-                      ),
+                          fontSize: 16, color: Color(0xFF828282)),
                     ),
                   ],
                 ),
@@ -61,11 +61,10 @@ class ErrorPage extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: DefaultButton(
-                  label: "Coba Lagi",
-                  onPressed: onPressed,
-                  bgColor: Color(0xFF10A9A4),
-                  fgColor: Colors.white
-                ),
+                    label: btnLabel,
+                    onPressed: onPressed,
+                    bgColor: Color(0xFF10A9A4),
+                    fgColor: Colors.white),
               )
             ],
           ),

@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 /// Utility untuk mendekripsi URL yang tersimpan terenkripsi di file .env.
 ///
 /// Enkripsi menggunakan AES-256-CBC.
-/// Format nilai di .env: <iv_base64>:<ciphertext_base64>
+/// Format nilai di .env: `iv_base64`:`ciphertext_base64`
 ///
 /// Untuk menghasilkan nilai terenkripsi baru, jalankan:
 ///   dart run tools/encrypt_url.dart

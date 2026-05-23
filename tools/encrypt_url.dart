@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 // Tool untuk menghasilkan nilai terenkripsi untuk dimasukkan ke file .env
 // Jalankan dengan: dart run tools/encrypt_url.dart
 //
