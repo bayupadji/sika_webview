@@ -45,7 +45,6 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>NSPhotoLibraryUsageDescription</key>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Kami memerlukan lokasi Anda untuk memberikan layanan yang lebih baik.</string>
 	<key>NSLocationAlwaysUsageDescription</key>

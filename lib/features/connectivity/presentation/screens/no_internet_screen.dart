@@ -22,7 +22,7 @@ class NoInternetScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(32.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
                 const Spacer(),

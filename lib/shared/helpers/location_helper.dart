@@ -56,6 +56,15 @@ class LocationHelper {
 
   Future<void> _fetchInitialLocation() async {
     try {
+      bool serviceEnabled = await _location.serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await _location.requestService();
+        if (!serviceEnabled) {
+          if (kDebugMode) debugPrint('[LocationHelper] Location service is disabled.');
+          return;
+        }
+      }
+
       final locationData = await _location.getLocation();
       final lat = locationData.latitude ?? 0.0;
       final lng = locationData.longitude ?? 0.0;
