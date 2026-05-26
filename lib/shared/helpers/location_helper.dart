@@ -13,7 +13,7 @@ class LocationHelper {
   final Function(double lat, double lng) onLocationUpdate;
   final VoidCallback onMockDetected;
 
-  loc.Location _location = loc.Location();
+  final loc.Location _location = loc.Location();
   StreamSubscription<loc.LocationData>? _locationSubscription;
   bool _isMockDetected = false;
 

@@ -36,7 +36,7 @@ class BlockingScreen extends StatelessWidget {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: const Color(AppConstants.errorColor).withOpacity(0.1),
+                        color: const Color(AppConstants.errorColor).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -140,7 +140,7 @@ class BlockingScreen extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
-      backgroundColor: const Color(AppConstants.errorColor).withOpacity(0.1),
+      backgroundColor: const Color(AppConstants.errorColor).withValues(alpha: 0.1),
       side: const BorderSide(color: Colors.transparent),
     );
   }
