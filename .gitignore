@@ -12,8 +12,8 @@
 .swiftpm/
 migrate_working_dir/
 .env
-.utils
-.antigravity.md
+tools/
+antigravity.md
 
 # IntelliJ related
 *.iml
