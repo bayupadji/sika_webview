@@ -6,19 +6,12 @@ import 'package:sika/features/security/presentation/providers/security_provider.
 enum SplashState { loading, sdkUnsupported, connectivityFailed, securityBlocked, ready }
 
 /// Provider untuk state splash screen.
-///
-/// Responsibility: manage loading/navigation state saja.
-/// Validasi internet dan security didelegasikan ke provider masing-masing.
+
 class SplashProvider with ChangeNotifier {
   SplashState _state = SplashState.loading;
   SplashState get state => _state;
   bool get isLoading => _state == SplashState.loading;
 
-  /// Jalankan full initialization flow:
-  /// 1. Validasi SDK
-  /// 2. Validasi internet
-  /// 3. Validasi security
-  /// 4. Set state ready jika semua aman
   Future<void> initialize({
     required SdkProvider sdkProvider,
     required ConnectivityProvider connectivityProvider,

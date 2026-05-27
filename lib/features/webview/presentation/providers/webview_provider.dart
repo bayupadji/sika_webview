@@ -3,10 +3,6 @@ import 'package:sika/features/webview/domain/usecases/load_webview_url.dart';
 
 enum WebViewLoadState { initial, loading, loaded, error }
 
-/// Provider untuk state WebView.
-///
-/// Responsibility: manage URL state dan loading status.
-/// Business logic didelegasikan ke [LoadWebViewUrl] usecase.
 class WebViewProvider with ChangeNotifier {
   final LoadWebViewUrl _loadWebViewUrl;
 

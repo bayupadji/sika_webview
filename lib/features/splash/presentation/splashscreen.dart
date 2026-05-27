@@ -7,11 +7,7 @@ import 'package:sika/features/security/presentation/providers/security_provider.
 import 'package:sika/features/splash/providers/splash_provider.dart';
 
 /// Splash screen yang mengatur initialization flow aplikasi.
-///
-/// Flow (antigravity.md):
-/// App Launch → Internet Validation → Security Validation → Load WebView
-///
-/// Navigasi dikontrol oleh SplashProvider.state dan AppRouter.
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 

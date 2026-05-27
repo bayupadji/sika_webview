@@ -5,12 +5,7 @@ import 'package:sika/features/security/presentation/providers/security_provider.
 import 'package:sika/shared/widgets/default_button.dart';
 
 /// Layar blocking fullscreen yang ditampilkan saat ada pelanggaran keamanan.
-///
-/// Rules (antigravity.md):
-/// - fullscreen
-/// - tidak bisa dismiss
-/// - tampilkan alasan block
-/// - memiliki tombol retry
+
 class BlockingScreen extends StatelessWidget {
   const BlockingScreen({super.key});
 

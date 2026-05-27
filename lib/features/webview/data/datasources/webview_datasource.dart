@@ -4,8 +4,7 @@ import 'package:sika/core/constants/app_constants.dart';
 import 'package:sika/core/utils/env_config.dart';
 
 /// Datasource untuk WebView — MethodChannel download hanya di sini.
-///
-/// Sesuai antigravity.md: MethodChannel tidak boleh dipanggil dari UI.
+
 class WebViewDatasource {
   static const _channel = MethodChannel(AppConstants.downloadChannel);
 

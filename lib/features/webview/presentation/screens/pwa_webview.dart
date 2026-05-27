@@ -9,18 +9,7 @@ import 'package:sika/features/webview/presentation/providers/webview_provider.da
 import 'package:sika/shared/helpers/location_helper.dart';
 
 /// Layar WebView utama aplikasi SIKA.
-///
-/// Rules (antigravity.md):
-/// - HTTPS only
-/// - JavaScript enabled
-/// - Session persistence
-/// - Tidak boleh akses file secara arbitrary
-/// - Tidak boleh dipanggil jika validasi keamanan belum selesai
-///
-/// Presentation layer:
-/// - Tidak akses datasource langsung
-/// - Tidak berisi business logic
-/// - Hanya consume provider state & usecase hasil
+
 class PwaWebView extends StatefulWidget {
   const PwaWebView({super.key});
 
@@ -164,16 +153,13 @@ class _PwaWebViewState extends State<PwaWebView> {
                   underPageBackgroundColor: Colors.white,
                   javaScriptEnabled: true,
                   mediaPlaybackRequiresUserGesture: false,
-                  // ── WebView Rules (antigravity.md): ──────────────────────
-                  // allowFileAccessFromFileURLs: DILARANG (default false)
-                  // allowUniversalAccessFromFileURLs: DILARANG (default false)
                   allowFileAccess: false,
                   allowsBackForwardNavigationGestures: true,
                   geolocationEnabled: true,
                   disableDefaultErrorPage: true,
                   networkAvailable: true,
                   alwaysBounceVertical: false,
-                  isInspectable: kDebugMode, // Hanya debug mode
+                  isInspectable: kDebugMode,
                   verticalScrollBarEnabled: false,
                   clearCache: false,
                   clearSessionCache: false,

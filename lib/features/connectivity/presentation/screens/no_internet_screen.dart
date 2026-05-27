@@ -5,12 +5,7 @@ import 'package:sika/features/connectivity/presentation/providers/connectivity_p
 import 'package:sika/shared/widgets/default_button.dart';
 
 /// Layar fullscreen yang ditampilkan saat tidak ada koneksi internet.
-///
-/// Rules (antigravity.md):
-/// - fullscreen
-/// - memiliki tombol retry
-/// - tampilkan status koneksi
-/// - tidak dapat bypass ke webview
+
 class NoInternetScreen extends StatelessWidget {
   const NoInternetScreen({super.key});
 

@@ -6,11 +6,7 @@ import 'package:sika/features/sdk_validation/presentation/providers/sdk_provider
 import 'package:sika/shared/widgets/default_button.dart';
 
 /// Layar fullscreen yang ditampilkan saat Android SDK atau WebView tidak didukung.
-///
-/// Rules (antigravity.md):
-/// - block akses aplikasi
-/// - jangan load webview
-/// - tampilkan unsupported device page
+
 class UnsupportedDeviceScreen extends StatelessWidget {
   const UnsupportedDeviceScreen({super.key});
 

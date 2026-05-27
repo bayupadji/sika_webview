@@ -1,7 +1,6 @@
 import 'package:sika/features/security/domain/entities/security_status.dart';
 
 /// Contract repository untuk pemeriksaan keamanan perangkat.
-/// Domain layer — pure Dart.
 abstract class SecurityRepository {
   Future<bool> isVpnActive();
   Future<bool> isMockLocationEnabled();

@@ -7,13 +7,8 @@ import 'package:sika/features/security/domain/usecases/check_vpn.dart';
 
 enum SecurityState { initial, checking, secure, blocked }
 
-/// Alasan kenapa akses diblokir.
 enum BlockReason { none, vpn, mockLocation, developerMode }
 
-/// Provider untuk state keamanan perangkat.
-///
-/// Responsibility: hanya manage state, expose ke UI.
-/// Business logic didelegasikan ke usecase masing-masing.
 class SecurityProvider with ChangeNotifier {
   final CheckVpn _checkVpn;
   final CheckMockLocation _checkMockLocation;
