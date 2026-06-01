@@ -14,7 +14,7 @@ class WebViewProvider with ChangeNotifier {
 
   WebViewLoadState _state = WebViewLoadState.initial;
   String _url = '';
-  String _errorMessage = '';
+  String _errorMessage = 'Tidak dapat memuat URL web.';
   bool _isWebViewReady = false;
 
   WebViewLoadState get state => _state;
