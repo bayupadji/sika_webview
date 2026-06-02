@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:detect_fake_location/detect_fake_location.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:location/location.dart' as loc;
@@ -43,15 +42,14 @@ class LocationHelper {
     await _startLocationStream();
   }
 
+  /// Cek mock location.
+  /// Tidak lagi menggunakan DetectFakeLocation() di awal karena sering
+  /// false positive di Android 11 ke bawah. Deteksi real-time yang reliable
+  /// dilakukan via LocationData.isMock saat streaming (lihat _startLocationStream).
   Future<bool> _checkMockLocation() async {
-    try {
-      return await DetectFakeLocation().detectFakeLocation();
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[LocationHelper] Mock check error: $e');
-      }
-      return false;
-    }
+    // Deteksi mock dilakukan secara real-time via LocationData.isMock
+    // pada _startLocationStream, bukan di awal.
+    return false;
   }
 
   Future<void> _fetchInitialLocation() async {
@@ -66,6 +64,18 @@ class LocationHelper {
       }
 
       final locationData = await _location.getLocation();
+      
+      // Cek mock pada initial location
+      final isMock = locationData.isMock ?? false;
+      if (isMock) {
+        _isMockDetected = true;
+        if (kDebugMode) {
+          debugPrint('[LocationHelper] Mock detected on initial location (isMock flag)!');
+        }
+        onMockDetected();
+        return;
+      }
+
       final lat = locationData.latitude ?? 0.0;
       final lng = locationData.longitude ?? 0.0;
       if (kDebugMode) {
@@ -91,19 +101,15 @@ class LocationHelper {
 
       _locationSubscription = _location.onLocationChanged.listen(
         (loc.LocationData data) async {
-          // Cek native mock flag
-          final nativeMock = data.isMock ?? false;
+          // Cek mock via flag bawaan Android OS (LocationData.isMock)
+          // Flag ini reliable untuk Android 6+ dan merupakan sumber
+          // paling akurat tanpa false positive.
+          final isMock = data.isMock ?? false;
 
-          // Cek ulang via plugin
-          bool pluginMock = false;
-          try {
-            pluginMock = await DetectFakeLocation().detectFakeLocation();
-          } catch (_) {}
-
-          if (nativeMock || pluginMock) {
+          if (isMock) {
             _isMockDetected = true;
             if (kDebugMode) {
-              debugPrint('[LocationHelper] Mock detected during stream!');
+              debugPrint('[LocationHelper] Mock detected during stream (isMock flag)!');
             }
             await stop();
             onMockDetected();

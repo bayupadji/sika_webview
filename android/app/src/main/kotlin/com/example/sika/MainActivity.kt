@@ -109,34 +109,40 @@ class MainActivity : FlutterActivity() {
     }
 
     // ─── Mock Location Detection ───────────────────────────────────────────
+    // Strategi per API level:
+    //
+    // API < 18 (pre-JellyBean 4.3):
+    //   Gunakan Settings.Secure.ALLOW_MOCK_LOCATION (masih berlaku).
+    //
+    // API 18-30 (JellyBean 4.3 s/d Android 11):
+    //   Settings.Secure.ALLOW_MOCK_LOCATION sudah deprecated tapi masih
+    //   bisa dibaca pada sebagian device. Namun di banyak device Android 6+
+    //   nilainya selalu 0, jadi kurang reliable.
+    //   Sebelumnya kita scan installed apps untuk ACCESS_MOCK_LOCATION
+    //   permission — tapi ini menyebabkan FALSE POSITIVE karena banyak
+    //   system app (Google Play Services, dsb.) punya permission itu
+    //   secara default.
+    //   Solusi: untuk API 18-30, kembalikan false di native layer dan
+    //   andalkan deteksi di Dart layer via LocationData.isMock dan
+    //   detect_fake_location plugin yang lebih akurat.
+    //
+    // API 31+ (Android 12+):
+    //   Location.isMock() tersedia dan reliable. Deteksi dilakukan
+    //   di Dart layer via LocationData.isMock flag.
+    //
     private fun checkMockLocationEnabled(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // Android 6+: cek via Settings.Secure.ALLOW_MOCK_LOCATION sudah deprecated
-            // Deteksi berdasarkan mock location app yang memiliki permission
-            try {
-                val pm = packageManager
-                val packages = pm.getInstalledApplications(0)
-                packages.any { appInfo ->
-                    try {
-                        pm.checkPermission(
-                            "android.permission.ACCESS_MOCK_LOCATION",
-                            appInfo.packageName
-                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED &&
-                        appInfo.packageName != packageName
-                    } catch (e: Exception) {
-                        false
-                    }
-                }
-            } catch (e: Exception) {
-                false
-            }
-        } else {
+        return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            // Pre-4.3: cek setting lama
             @Suppress("DEPRECATION")
             Settings.Secure.getInt(
                 contentResolver,
                 Settings.Secure.ALLOW_MOCK_LOCATION,
                 0
             ) != 0
+        } else {
+            // API 18+: native setting tidak reliable, serahkan ke Dart layer
+            // (LocationData.isMock + detect_fake_location plugin)
+            false
         }
     }
 }

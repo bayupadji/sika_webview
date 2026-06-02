@@ -47,39 +47,29 @@ class SecurityDatasource {
   }
 
   // ─── Mock Location Detection ───────────────────────────────────────────
-  // Menggunakan kombinasi Android Native (via MethodChannel) +
-  // detect_fake_location plugin untuk double validation.
+  // Andalkan native channel (yang sekarang sudah conservative/tidak
+  // false-positive). Plugin detect_fake_location hanya fallback jika native error.
+  // Deteksi real-time mock dilakukan di LocationHelper via LocationData.isMock.
 
   Future<bool> isMockLocationEnabled() async {
     try {
-      // Layer 1: Native Android API via MethodChannel
       final nativeResult = await _channel.invokeMethod<bool>('isMockLocationEnabled');
       final nativeMock = nativeResult ?? false;
-
-      // Layer 2: detect_fake_location plugin
-      bool pluginMock = false;
-      try {
-        pluginMock = await DetectFakeLocation().detectFakeLocation();
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('[SecurityDatasource] detect_fake_location error: $e');
-        }
-      }
-
-      final isMock = nativeMock || pluginMock;
       if (kDebugMode) {
-        debugPrint(
-          '[SecurityDatasource] Mock location: native=$nativeMock, plugin=$pluginMock, final=$isMock',
-        );
+        debugPrint('[SecurityDatasource] Mock location (native): $nativeMock');
       }
-      return isMock;
+      return nativeMock;
     } on PlatformException catch (e) {
       if (kDebugMode) {
-        debugPrint('[SecurityDatasource] Mock location check error: ${e.message}');
+        debugPrint('[SecurityDatasource] Mock location native error: ${e.message}');
       }
-      // Fallback ke plugin saja jika native gagal
+      // Fallback ke plugin jika native gagal
       try {
-        return await DetectFakeLocation().detectFakeLocation();
+        final pluginResult = await DetectFakeLocation().detectFakeLocation();
+        if (kDebugMode) {
+          debugPrint('[SecurityDatasource] Mock location (plugin fallback): $pluginResult');
+        }
+        return pluginResult;
       } catch (_) {
         return false;
       }
