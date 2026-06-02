@@ -10,7 +10,7 @@ Aplikasi ini dibangun dengan mengimplementasikan prinsip **Clean Architecture** 
 - **Strict Security Validation (Gatekeeper)**: Memvalidasi lingkungan perangkat sebelum WebView dapat diakses:
   - 🛡️ **Android SDK Validation**: Mendukung minimal API 24 (Nougat) dan memvalidasi ketersediaan WebView sistem.
   - 🌐 **VPN Detection**: Memblokir pengguna yang mengaktifkan koneksi VPN (Native Detection).
-  - 📍 **Mock Location Protection**: Mencegah pemalsuan GPS dengan perlindungan ganda (Native + Plugin).
+  - 📍 **Mock Location Protection**: Mencegah pemalsuan GPS dengan deteksi berbasis Native Platform Flags Android.
   - 👨‍💻 **Developer Mode Check**: Memblokir akses jika opsi pengembang (*Developer Options*) diaktifkan.
 - **2-Stage Connectivity Check**: Memastikan perangkat terhubung dengan *network* (WiFi/Data) dan memiliki akses aktual ke *internet* (mengatasi *captive portal*).
 - **PWA WebView Container**: Integrasi `flutter_inappwebview` dengan fitur *file download* via `MediaStore` Android, akses *camera/storage*, dan integrasi geolokasi secara dinamis ke dalam JavaScript web.
@@ -20,10 +20,11 @@ Aplikasi ini dibangun dengan mengimplementasikan prinsip **Clean Architecture** 
 ## 🛠️ Persiapan & Instalasi
 
 ### 1. Environment Configuration
-Aplikasi ini membutuhkan file `.env` di *root directory*. Buat file `.env` dan masukkan konfigurasi berikut:
+Aplikasi ini membutuhkan file `.env` di *root directory*. Konfigurasi URL dibaca secara langsung tanpa enkripsi tambahan. Buat file `.env` dan masukkan konfigurasi berikut:
 
 ```env
 PROD_URL=https://your-pwa-url.com
+DEV_URL=https://dev-pwa-url.com
 ```
 
 ### 2. Instalasi Dependensi
